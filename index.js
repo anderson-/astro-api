@@ -25,6 +25,13 @@ const getSigno = (longitude) => {
     return signos[Math.floor(longitude / 30)];
 };
 
+function getGraus(longitude) {
+    const deg = longitude % 360;
+    const graus = Math.floor(deg % 30);
+    const minutos = Math.round((deg % 1) * 60);
+    return `${graus}°${minutos}'`;
+}
+
 app.post('/mapa-astral', (req, res) => {
     try {
         const { date, time, lat, lng } = req.body;
@@ -58,10 +65,23 @@ app.post('/mapa-astral', (req, res) => {
                 nome: planeta.nome,
                 longitude: r.longitude,
                 signo: getSigno(r.longitude),
+                grau: getGraus(r.longitude),
             };
         });
 
         const casas = swisseph.swe_houses(julianDay, lat, lng, 'P');
+
+        const resultadoCasas = [];
+        for (let i = 0; i < 12; i++) {
+            const casa = casas.house[i];
+            resultadoCasas.push({
+                casa: i + 1,
+                signo: getSigno(casa),
+                longitude: casa,
+                grau: getGraus(casa),
+            });
+        }
+
         const ascendente = casas.ascendant;
         const meioDoCeu = casas.mc;
 
@@ -77,7 +97,7 @@ app.post('/mapa-astral', (req, res) => {
                 meioDoCeu: getSigno(meioDoCeu)
             },
             planetas: resultadosPlanetas,
-            casas: casas.house,
+            casas: resultadoCasas,
             ascendente,
             meioDoCeu
         };
